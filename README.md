@@ -53,8 +53,30 @@ given in the project, the star schema looks like this (generated using [LucidCha
 ## ETL Process
 
 ## Usage and Sample Results
+### Setup & Configuration
+1. Setup your IAM user (with programmatic) Access Key and Secret Key with the following commands:
+- ``export AWS_ACCESS_KEY_ID=your_access_key_id`` 
+- ``export AWS_SECRET_ACCESS_KEY=your_secret_access_key``<br/><br/>
+**Note:** You can also setup your Access Key and Secret Key by storing them in config or credential files. 
+However we **strongly recommend** the above approach because you won't need to change the codes.<br/>
+2. Within the folder ``cluster_start_shutdown/``, there are 2 python scripts and 1 config file for cluster/database parameters:
+- ``cluster.cfg``: Defines Redshift cluster Hardware/Database setup and region/role names. You can change them however you want.
+- ``start_cluster.py``: All-in-One script to launch the Redshift cluster and handles IAM Role/Policy creation and SecurityGroup configurations.
+We **strongly recommend** you to use this script to create the cluster and auto-configure all related resources/services. You **MUST** have a running cluster 
+in order to proceed with ETL and query experiments later.
+- ``shutdown_cluster.py``: All-in-One script to shutdown the cluster and clean up all related resources for this project. We **strongly recommend** you to run 
+this script after you are done with the experiments/project to prevent any further costs induced by AWS Redshift services.
+
 
 ## Implementation Details/Notes
+1. About IAM user credentials
+Your IAM user should have the following permissions: 
+- At least ReadOnly Access to AWS S3: in order to load data from S3 
+- FullAccess to AWS Redshift resources: in order to create and manage data warehouse on Redshift clusters
+- FullAccess to EC2 resource: in order to create Security Groups for Redshift clusters
+- Access to IAM: in order to create IAM roles/policies which will be attached to Redshift cluster<br/><br/>
+In this project, we used an IAM user with full access to AWS resources (AdministratorAccess) for simplicity. However, you 
+should follow the AWS best practices (to grant least permissions) in real production environment.
 
 ## TODOs
 1. Analyze table design and performance.
@@ -64,3 +86,4 @@ given in the project, the star schema looks like this (generated using [LucidCha
 2. [Developer guide to AWS Redshift](https://docs.aws.amazon.com/redshift/latest/dg/welcome.html): how to create and develop data warehouses using Redshift.
 3. [Python SQL client/driver psycopg2](https://www.psycopg.org/docs/): how to use psycopg2 to connect to SQL PostgreSQL-compatible databases and execute queries.
 4. [psycopg2 with Redshift](https://rudderstack.com/blog/access-and-query-your-amazon-redshift-data-using-python-and-r/): how to use psycopg2 to connect to databases on AWS Redshift and execute queries.
+5. [Redshift python SDK: boto3](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html)
