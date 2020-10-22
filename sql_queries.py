@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS songplays (
 	song_id 	   varchar(50)  NOT NULL REFERENCES songs(song_id),
 	artist_id 	   varchar(50)  NOT NULL REFERENCES artists(artist_id),
 	session_id 	   int,
-	location 	   varchar(512),
+	location 	   varchar(256),
 	user_agent 	   varchar
 )
 distkey(song_id)
@@ -102,8 +102,8 @@ sortkey(song_id);
 artist_table_create = ("""
 CREATE TABLE IF NOT EXISTS artists (
 	artist_id 	varchar(50) 	NOT NULL PRIMARY KEY,
-	name 		varchar(512)	NOT NULL,
-	location 	varchar(512),
+	name 		varchar(256)	NOT NULL,
+	location 	varchar(256),
 	lattitude 	decimal(9, 6),
 	longitude 	decimal(9, 6)
 )
