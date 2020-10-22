@@ -9,11 +9,11 @@ config.read('dwh.cfg')
 
 staging_events_table_drop = "DROP TABLE IF EXISTS staging_events;"
 staging_songs_table_drop = "DROP TABLE IF EXISTS staging_songs;"
-songplay_table_drop = "DROP TABLE IF EXISTS songplays"
-user_table_drop = "DROP TABLE IF EXISTS users"
-song_table_drop = "DROP TABLE IF EXISTS songs"
-artist_table_drop = "DROP TABLE IF EXISTS artists"
-time_table_drop = "DROP TABLE IF EXISTS time"
+songplay_table_drop = "DROP TABLE IF EXISTS songplays;"
+user_table_drop = "DROP TABLE IF EXISTS users;"
+song_table_drop = "DROP TABLE IF EXISTS songs;"
+artist_table_drop = "DROP TABLE IF EXISTS artists;"
+time_table_drop = "DROP TABLE IF EXISTS time;"
 
 # CREATE TABLES
 
@@ -37,7 +37,9 @@ CREATE TABLE IF NOT EXISTS staging_events (
 	ts 				 bigint,
 	user_agent 		 varchar,
 	user_id 		 int
-);
+)
+diststyle auto
+sortkey auto;
 """)
 
 staging_songs_table_create = ("""
@@ -52,7 +54,9 @@ CREATE TABLE IF NOT EXISTS staging_songs (
 	title 				varchar,
 	duration 			decimal(10, 5),
 	year 				int
-);
+)
+diststyle auto
+sortkey auto;
 """)
 
 songplay_table_create = ("""
@@ -66,7 +70,10 @@ CREATE TABLE IF NOT EXISTS songplays (
 	session_id 	   int,
 	location 	   varchar,
 	user_agent 	   varchar
-);
+)
+diststyle auto
+distkey(song_id)
+sortkey(start_time);
 """)
 
 user_table_create = ("""
@@ -75,10 +82,10 @@ CREATE TABLE IF NOT EXISTS users (
 	first_name    varchar(100)    NOT NULL,
 	last_name 	  varchar(100) 	  NOT NULL,
 	gender 		  char(1),
-				  CONSTRAINT gender_value
-				  CHECK(gender IN ('M', 'F')),
 	level 		  varchar(10)
-);
+)
+diststyle all
+sortkey(user_id);
 """)
 
 song_table_create = ("""
@@ -87,50 +94,36 @@ CREATE TABLE IF NOT EXISTS songs (
 	title 		 varchar 		NOT NULL,
 	artist_id    varchar(50) 	NOT NULL,
 	year 		 int 			NOT NULL DEFAULT 0,
-				 CONSTRAINT song_year
-               	 CHECK(year >= 1800 OR year = 0),
-	duration 	 decimal(10, 5) NOT NULL,
-				 CONSTRAINT duration_range
-              	 CHECK(duration BETWEEN 0.00000 AND 86400.00000)
-);
+	duration 	 decimal(10, 5) NOT NULL
+)
+diststyle all
+sortkey(song_id);
 """)
 
 artist_table_create = ("""
-CREATE TABLE IF NOT EXISTS songs (
+CREATE TABLE IF NOT EXISTS artists (
 	artist_id 	varchar(50) 	PRIMARY KEY,
 	name 		varchar 		NOT NULL,
 	location 	varchar,
 	lattitude 	decimal(9, 6),
-				CONSTRAINT latitude_range
-				CHECK(latitude BETWEEN -90.000000 AND 90.000000),
-	longitude 	decimal(9, 6),
-				CONSTRAINT longitude_range
-				CHECK(longitude BETWEEN -180.000000 AND 180.000000)
-);
+	longitude 	decimal(9, 6)
+)
+diststyle all
+sortkey(artist_id);
 """)
 
 time_table_create = ("""
 CREATE TABLE IF NOT EXISTS time (
 	start_time		timestamp  PRIMARY KEY,
 	hour 			smallint   NOT NULL,
-					CONSTRAINT hour_range
-					CHECK(hour BETWEEN 0 AND 23),
 	day 			smallint   NOT NULL,
-					CONSTRAINT day_range
-					CHECK(day BETWEEN 0 AND 365)
 	week 			smallint   NOT NULL,
-					CONSTRAINT week_range
-					CHECK(week BETWEEN 0 AND 52),
 	month 			smallint   NOT NULL,
-					CONSTRAINT month_range
-					CHECK(month BETWEEN 1 AND 12),
 	year 			smallint   NOT NULL,
-					CONSTRAINT year_range
-					CHECK(year >= 1800),
-	weekday 		smallint   NOT NULL,
-					CONSTRAINT weekday_range
-					CHECK(weekday BETWEEN 0 AND 6)
-);
+	weekday 		smallint   NOT NULL
+)
+diststyle auto
+sortkey(start_time);
 """)
 
 # STAGING TABLES
@@ -160,7 +153,7 @@ time_table_insert = ("""
 
 # QUERY LISTS
 
-create_table_queries = [staging_events_table_create, staging_songs_table_create, songplay_table_create, user_table_create, song_table_create, artist_table_create, time_table_create]
+create_table_queries = [staging_events_table_create, staging_songs_table_create, user_table_create, song_table_create, artist_table_create, time_table_create, songplay_table_create]
 drop_table_queries = [staging_events_table_drop, staging_songs_table_drop, songplay_table_drop, user_table_drop, song_table_drop, artist_table_drop, time_table_drop]
 copy_table_queries = [staging_events_copy, staging_songs_copy]
 insert_table_queries = [songplay_table_insert, user_table_insert, song_table_insert, artist_table_insert, time_table_insert]
