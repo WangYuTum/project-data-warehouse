@@ -59,13 +59,18 @@ given in the project, the star schema looks like this (generated using [LucidCha
 - ``export AWS_SECRET_ACCESS_KEY=your_secret_access_key``<br/><br/>
 **Note:** You can also setup your Access Key and Secret Key by storing them in config or credential files. 
 However we **strongly recommend** the above approach because you won't need to change the codes.<br/>
-2. Within the folder ``cluster_start_shutdown/``, there are 2 python scripts and 1 config file for cluster/database parameters:
-- ``cluster.cfg``: Defines Redshift cluster Hardware/Database setup and region/role names. You can change them however you want.
-- ``start_cluster.py``: All-in-One script to launch the Redshift cluster and handles IAM Role/Policy creation and SecurityGroup configurations.
+2. Create your Redshift cluster using the following scripts:
+- ``cluster_start_shutdown/cluster.cfg``: Defines Redshift cluster Hardware/Database setup and region/role names. You can change them however you want.
+- ``cluster_start_shutdown/start_cluster.py``: All-in-One script to launch the Redshift cluster and handles IAM Role/Policy creation and SecurityGroup configurations.
 We **strongly recommend** you to use this script to create the cluster and auto-configure all related resources/services. You **MUST** have a running cluster 
 in order to proceed with ETL and query experiments later.
-- ``shutdown_cluster.py``: All-in-One script to shutdown the cluster and clean up all related resources for this project. We **strongly recommend** you to run 
-this script after you are done with the experiments/project to prevent any further costs induced by AWS Redshift services.
+- ``cluster_start_shutdown/shutdown_cluster.py``: All-in-One script to shutdown the cluster and clean up all related resources for this project. We **strongly recommend** you to run this script after you are done with the experiments/project to prevent any further costs induced by AWS Redshift services.
+3. Fill the **HOST** and **ARN** in ``dwh.cfg``. You can get their values by runing ``cluster_start_shutdown/start_cluster.py`` in previous step.
+4. Run ``create_tables.py``.
+5. Run ``etl.py`` to load data from S3 into staging tables and then transfer into target tables (fact and dimension tables).
+<br    > **Note** that you can use **NOLOAD** option in **COPY** command to verify JSON data correctness/integrity without loading the actual data into tables. 
+You can then check errors or violation of data format by running the query "``select *
+from pg_catalog.stl_load_errors;``" on Redshift cluster.
 
 
 ## Implementation Details/Notes
