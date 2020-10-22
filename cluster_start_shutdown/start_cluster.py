@@ -155,11 +155,8 @@ def main():
     redshift = boto3.client('redshift', region_name=config['DEFAULT']['REGION_NAME'])
     ec2 = boto3.resource('ec2', region_name=config['DEFAULT']['REGION_NAME'])
 
-    # create IAM role
     roleArn = create_iam_role(iam, config)
-    # create redshift cluster
     cluster_props = create_redshift_cluster(redshift, config, roleArn)
-    # create security group for the cluster
     sg = create_ec2_sg(ec2, config, cluster_props)
 
     print('Cluster Setup done.')
