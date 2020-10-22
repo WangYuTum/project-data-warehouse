@@ -29,7 +29,7 @@ def main():
         iam.delete_role(RoleName=config['DEFAULT']['ROLE_NAME'])
 
         # revoke ingress rules
-        sg = ec2.security_groups.all()[0]
+        sg = list(ec2.security_groups.all())[0]
         print('Revoking Ingress rules for SecurityGroup {}'.format(sg))
         sg.revoke_ingress(GroupName=sg.group_name,
                           CidrIp='0.0.0.0/0',
