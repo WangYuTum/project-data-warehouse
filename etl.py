@@ -36,7 +36,7 @@ def main():
     conn = psycopg2.connect("host={} dbname={} user={} password={} port={}".format(*config['CLUSTER'].values()))
     cur = conn.cursor()
     
-    print('Loading staging tables...')
+    print('Loading staging tables. This may take up to 2 hours if using complete song dataset...')
     load_staging_tables(cur, conn)
     print('Inserting fact/dim tables...')
     insert_tables(cur, conn)
