@@ -81,8 +81,7 @@ optimize performance.
 
 ## TODOs
 1. Analyze table design and performance via trying different distribution styles and sorting keys.
-2. Docstring on codes.
-3. Run some test queries.
+2. Run some test queries.
 
 ## Resources
 1. [Intro to AWS Redshift Cluster Management](https://docs.aws.amazon.com/redshift/latest/mgmt/welcome.html): how to create and manage Redshift clusters on AWS.
