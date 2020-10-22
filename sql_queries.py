@@ -19,18 +19,18 @@ time_table_drop = "DROP TABLE IF EXISTS time;"
 
 staging_events_table_create= ("""
 CREATE TABLE IF NOT EXISTS staging_events (
-	artist 			 varchar,
+	artist 			 varchar(512),
 	auth 			 varchar(20),
-	first_name 		 varchar(100),
+	first_name 		 varchar(50),
 	gender 			 char(1),
 	item_in_session	 int,
-	last_name 		 varchar(100),
+	last_name 		 varchar(50),
 	length 			 decimal(10, 5),
 	level 			 varchar(10),
-	location 		 varchar,
+	location 		 varchar(512),
 	method 			 varchar(10),
 	page 			 varchar(50),
-	registration 	 varchar(20),
+	registration 	 decimal(14, 1),
 	session_id 		 int,
 	song 			 varchar,
 	status 			 int,
@@ -48,8 +48,8 @@ CREATE TABLE IF NOT EXISTS staging_songs (
 	artist_id 			varchar(50),
 	artist_latitude 	decimal(9, 6),
 	artist_longitude    decimal(9, 6),
-	artist_location 	varchar,
-	artist_name 		varchar,
+	artist_location 	varchar(512),
+	artist_name 		varchar(512),
 	song_id 			varchar(50),
 	title 				varchar,
 	duration 			decimal(10, 5),
@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS songplays (
 	song_id 	   varchar(50)  NOT NULL REFERENCES songs(song_id),
 	artist_id 	   varchar(50)  NOT NULL REFERENCES artists(artist_id),
 	session_id 	   int,
-	location 	   varchar,
+	location 	   varchar(512),
 	user_agent 	   varchar
 )
 diststyle auto
@@ -79,8 +79,8 @@ sortkey(start_time);
 user_table_create = ("""
 CREATE TABLE IF NOT EXISTS users (
 	user_id 	  int 			  PRIMARY KEY,
-	first_name    varchar(100)    NOT NULL,
-	last_name 	  varchar(100) 	  NOT NULL,
+	first_name    varchar(50)    NOT NULL,
+	last_name 	  varchar(50) 	  NOT NULL,
 	gender 		  char(1),
 	level 		  varchar(10)
 )
@@ -92,7 +92,7 @@ song_table_create = ("""
 CREATE TABLE IF NOT EXISTS songs (
 	song_id 	 varchar(50) 	PRIMARY KEY,
 	title 		 varchar 		NOT NULL,
-	artist_id    varchar(50) 	NOT NULL,
+	artist_id    varchar(50),
 	year 		 int 			NOT NULL DEFAULT 0,
 	duration 	 decimal(10, 5) NOT NULL
 )
@@ -103,8 +103,8 @@ sortkey(song_id);
 artist_table_create = ("""
 CREATE TABLE IF NOT EXISTS artists (
 	artist_id 	varchar(50) 	PRIMARY KEY,
-	name 		varchar 		NOT NULL,
-	location 	varchar,
+	name 		varchar(512),
+	location 	varchar(512),
 	lattitude 	decimal(9, 6),
 	longitude 	decimal(9, 6)
 )
@@ -129,26 +129,76 @@ sortkey(start_time);
 # STAGING TABLES
 
 staging_events_copy = ("""
-""").format()
+COPY staging_events
+FROM {0}
+iam_role {1}
+region 'us-west-2'
+json {2}
+NOLOAD;
+""").format(config['S3']['LOG_DATA'], config['IAM_ROLE']['ARN'], config['S3']['LOG_JSONPATH'])
 
 staging_songs_copy = ("""
-""").format()
+COPY staging_songs
+FROM {0}
+iam_role {1}
+region 'us-west-2'
+json 'auto'
+NOLOAD;
+""").format(config['S3']['SONG_DATA'], config['IAM_ROLE']['ARN'])
 
 # FINAL TABLES
 
 songplay_table_insert = ("""
+INSERT INTO songplays (start_time, user_id, level, song_id, artist_id, session_id, location, user_agent)
+	 SELECT timestamp 'epoch' + ts / 1000 * interval '1 second' AS start_time,
+			user_id,
+			level,
+			song_id,
+			artist_id,
+			session_id,
+			location,
+			user_agent
+	   FROM staging_events, staging_songs
+      WHERE staging_events.song = staging_songs.title
+        AND staging_events.artist = staging_songs.artist_name;
 """)
 
 user_table_insert = ("""
+INSERT INTO users (user_id, first_name, last_name, gender, level)
+	 SELECT user_id, first_name, last_name, gender, level
+	   FROM staging_events
+         ON CONFLICT (user_id)
+            DO UPDATE SET level = excluded.level;
 """)
 
 song_table_insert = ("""
+INSERT INTO songs (song_id, title, artist_id, year, duration)
+	 SELECT song_id, title, artist_id, year, duration
+	   FROM staging_songs
+		 ON CONFLICT (song_id)
+			DO NOTHING;
 """)
 
 artist_table_insert = ("""
+INSERT INTO artists (artist_id, name, location, lattitude, longitude)
+     SELECT artist_id, artist_name, artist_location, artist_latitude, artist_longitude
+       FROM staging_songs
+         ON CONFLICT (artist_id)
+            DO NOTHING;
 """)
 
 time_table_insert = ("""
+INSERT INTO time (start_time, hour, day, week, month, year, weekday)
+	 SELECT timestamp 'epoch' + ts / 1000 * interval '1 second' AS start_time,
+	   		extract(hour from (timestamp 'epoch' + ts / 1000 * interval '1 second'))
+	   		extract(day from (timestamp 'epoch' + ts / 1000 * interval '1 second'))
+	   		extract(week from (timestamp 'epoch' + ts / 1000 * interval '1 second'))
+	   		extract(month from (timestamp 'epoch' + ts / 1000 * interval '1 second'))
+	   		extract(year from (timestamp 'epoch' + ts / 1000 * interval '1 second'))
+	   		extract(weekday from (timestamp 'epoch' + ts / 1000 * interval '1 second'))
+  	   FROM staging_events
+  		 ON CONFLICT (start_time)
+  			DO NOTHING;
 """)
 
 # QUERY LISTS
@@ -156,4 +206,4 @@ time_table_insert = ("""
 create_table_queries = [staging_events_table_create, staging_songs_table_create, user_table_create, song_table_create, artist_table_create, time_table_create, songplay_table_create]
 drop_table_queries = [staging_events_table_drop, staging_songs_table_drop, songplay_table_drop, user_table_drop, song_table_drop, artist_table_drop, time_table_drop]
 copy_table_queries = [staging_events_copy, staging_songs_copy]
-insert_table_queries = [songplay_table_insert, user_table_insert, song_table_insert, artist_table_insert, time_table_insert]
+insert_table_queries = [user_table_insert, song_table_insert, artist_table_insert, time_table_insert, songplay_table_insert]
