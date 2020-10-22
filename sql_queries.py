@@ -6,7 +6,6 @@ config = configparser.ConfigParser()
 config.read('dwh.cfg')
 
 # DROP TABLES
-
 staging_events_table_drop = "DROP TABLE IF EXISTS staging_events;"
 staging_songs_table_drop = "DROP TABLE IF EXISTS staging_songs;"
 songplay_table_drop = "DROP TABLE IF EXISTS songplays;"
@@ -16,7 +15,6 @@ artist_table_drop = "DROP TABLE IF EXISTS artists;"
 time_table_drop = "DROP TABLE IF EXISTS time;"
 
 # CREATE TABLES
-
 staging_events_table_create= ("""
 CREATE TABLE IF NOT EXISTS staging_events (
 	artist 			 varchar(256),
@@ -77,7 +75,7 @@ sortkey(start_time);
 
 user_table_create = ("""
 CREATE TABLE IF NOT EXISTS users (
-	user_id 	  int 			 NOT NULL PRIMARY KEY ,
+	user_id 	  int 			 NOT NULL PRIMARY KEY,
 	first_name    varchar(50)    NOT NULL,
 	last_name 	  varchar(50) 	 NOT NULL,
 	gender 		  char(1),
