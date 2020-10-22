@@ -67,24 +67,22 @@ in order to proceed with ETL and query experiments later.
 - ``cluster_start_shutdown/shutdown_cluster.py``: All-in-One script to shutdown the cluster and clean up all related resources for this project. We **strongly recommend** you to run this script after you are done with the experiments/project to prevent any further costs induced by AWS Redshift services.
 3. Fill the **HOST** and **ARN** in ``dwh.cfg``. You can get their values by runing ``cluster_start_shutdown/start_cluster.py`` in previous step.
 4. Run ``create_tables.py``.
-5. Run ``etl.py`` to load data from S3 into staging tables and then transfer into target tables (fact and dimension tables).
+5. Run ``etl.py`` to load data from S3 into staging tables and then transfer into target tables (fact and dimension tables). You may choose a smaller dataset 
+"``s3://udacity-dend/song_data``" (4-min runtime) instead of a complete one "``s3://udacity-dend/song-data``" (2 hours runtime) for demonstration purpose.
 <br    > **Note** that you can use **NOLOAD** option in **COPY** command to verify JSON data correctness/integrity without loading the actual data into tables. 
-You can then check errors or violation of data format by running the query "``select *
-from pg_catalog.stl_load_errors;``" on Redshift cluster.
+You can then check errors or violation of data format by running the query "``select * from pg_catalog.stl_load_errors;``" on Redshift cluster.
 
 
 ## Implementation Details/Notes
-1. About IAM user credentials
-Your IAM user should have the following permissions: 
-- At least ReadOnly Access to AWS S3: in order to load data from S3 
-- FullAccess to AWS Redshift resources: in order to create and manage data warehouse on Redshift clusters
-- FullAccess to EC2 resource: in order to create Security Groups for Redshift clusters
-- Access to IAM: in order to create IAM roles/policies which will be attached to Redshift cluster<br/><br/>
-In this project, we used an IAM user with full access to AWS resources (AdministratorAccess) for simplicity. However, you 
-should follow the AWS best practices (to grant least permissions) in real production environment.
+1. Redshift does not enforce ``NOT NULL`` constraint on **PRIMARY KEY**, **FOREIGN KEY** and **REFERENCE _table_name_ (_column_name_)**.
+2. Redshift does not enforce uniqueness constraint on **PRIMARY KEY**. However the auto-generated **IDENTITY** column is guaranteed to have unique value across entire table.
+3. Redshift does not enforce referential integrity on keyword **REFERENCE _table_name_ (_column_name_)** or **FOREIGN KEY**, they are only used by query planers to 
+optimize performance.
 
 ## TODOs
-1. Analyze table design and performance.
+1. Analyze table design and performance via trying different distribution styles and sorting keys.
+2. Docstring on codes.
+3. Run some test queries.
 
 ## Resources
 1. [Intro to AWS Redshift Cluster Management](https://docs.aws.amazon.com/redshift/latest/mgmt/welcome.html): how to create and manage Redshift clusters on AWS.
