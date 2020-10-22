@@ -42,8 +42,8 @@ From the above story, we can extract the necessary information/dimensions:
 - **When**: **time** dimension
 - **How (many)**: **songplays** fact
 - (More possible dimensions but not used in this project):
-	- **Where**: **locations** dimension
-	- **How**: **agents** dimension
+    - **Where**: **locations** dimension
+    - **How**: **agents** dimension
 
 Since the core business process/metric is an user playing a song, the fact table should store the song play records with 
 user/song identifier together with related information about the how and where the song is played. Based on the data and tables 
@@ -72,6 +72,58 @@ in order to proceed with ETL and query experiments later.
 <br    > **Note** that you can use **NOLOAD** option in **COPY** command to verify JSON data correctness/integrity without loading the actual data into tables. 
 You can then check errors or violation of data format by running the query "``select * from pg_catalog.stl_load_errors;``" on Redshift cluster.
 
+### Sample Queries
+**Note** that you must finish the ETL process before running the sample queries.
+1. Top-10 most played songs.
+- Query:
+```
+  SELECT sp.song_id, s.title, count(*) AS cnt 
+    FROM songplays sp
+    JOIN songs s
+      ON sp.song_id = s.song_id
+GROUP BY 1, 2
+ORDER BY 3 DESC
+   LIMIT 10;
+```
+- Result:
+![query1](assets/images/query1.png)<br/>
+
+2. Top-10 most played artists.
+- Query:
+```
+  SELECT sp.artist_id, a.name AS artist_name, count(*) AS cnt
+    FROM songplays sp
+    JOIN artists a
+      ON sp.artist_id = a.artist_id
+GROUP BY 1, 2
+ORDER BY 3 DESC
+   LIMIT 10;
+```
+- Result:
+![query2](assets/images/query2.png)<br/>
+
+3. Statistics on when songs are played during a day
+- Query:
+```
+  SELECT CASE
+           WHEN t.hour BETWEEN 2 AND 8  THEN '2~8'
+           WHEN t.hour BETWEEN 9 AND 12 THEN '9~12'
+           WHEN t.hour BETWEEN 13 AND 18 THEN '13~18'
+           WHEN t.hour BETWEEN 19 AND 22 THEN '19~22'
+           ELSE '23~24, 0~2'
+         END AS play_time, 
+         count(*) AS cnt
+    FROM songplays sp
+    JOIN time t
+      ON sp.start_time = t.start_time
+GROUP BY 1
+ORDER BY 2 DESC;
+
+```
+- Result:
+![query3](assets/images/query3.png)
+We can tell from the above result that most users play songs in the afternoon between 13:00 and 18:00 and very few users play songs in (late)mid-night.
+4. Another interesting query would be aggregating song play history for each user and use it for machine learning/recommendation.
 
 ## Implementation Details/Notes
 1. Redshift does not enforce ``NOT NULL`` constraint on **PRIMARY KEY**, **FOREIGN KEY** and **REFERENCE _table_name_ (_column_name_)**.
@@ -81,7 +133,6 @@ optimize performance.
 
 ## TODOs
 1. Analyze table design and performance via trying different distribution styles and sorting keys.
-2. Run some test queries.
 
 ## Resources
 1. [Intro to AWS Redshift Cluster Management](https://docs.aws.amazon.com/redshift/latest/mgmt/welcome.html): how to create and manage Redshift clusters on AWS.
