@@ -24,37 +24,37 @@ def get_config(filepath):
 def create_iam_role(iam, config):
 	"""
 	Create an IAM role to allow Redshift to access S3.
-
 	Arg(s):
-		config: an object that contains necessary information for setting up the cluster
 		iam: IAM resource/client
+		config: an object that contains necessary information for setting up the cluster
 	Return(s):
 		AWS RoleARN
 	"""
-	
+
 	try:
 		print('Creating IAM Role')
-		dwhRole = iam.create_role(RoleName=config['DEFAULT']['ROLE_NAME'],
-								  Description='IAM Role that allows Redshift to access S3 bucket ReadOnly',
-    							  AssumeRolePolicyDocument=json.dumps(
-    							  {'Statement': 
-    								[{'Action': 'sts:AssumeRole',
-    								  'Effect': 'Allow',
-    								  'Principal': {'Service': 'redshift.amazonaws.com'}
-    								}],
-    								'Version': '2012-10-17'
-    							  })
-    							)
+		dwhRole = iam.create_role(
+			RoleName=config['DEFAULT']['ROLE_NAME'],
+			Description='IAM Role that allows Redshift to access S3 bucket ReadOnly',
+			AssumeRolePolicyDocument=json.dumps(
+				{'Version': '2012-10-17',
+				'Statement':
+				[{'Action': 'sts:AssumeRole',
+				'Effect': 'Allow',
+				'Principal': {'Service': 'redshift.amazonaws.com'}
+				}]}))
 		# Wait for up to 30 seconds until the role is created successfully
-		iam.get_waiter('role_exists').wait(RoleName=config['DEFAULT']['ROLE_NAME'],
-										   WaiterConfig={'Delay': 1, 'MaxAttempts': 30})
+		iam.get_waiter('role_exists').wait(
+			RoleName=config['DEFAULT']['ROLE_NAME'],
+			WaiterConfig={'Delay': 1, 'MaxAttempts': 30})
 	except Exception as e:
 		print(e)
 
 	try:
 		print('Attaching Policy')
-		response = iam.attach_role_policy(RoleName=config['DEFAULT']['ROLE_NAME'], 
-										  PolicyArn='arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess')
+		response = iam.attach_role_policy(
+			RoleName=config['DEFAULT']['ROLE_NAME'], 
+			PolicyArn='arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess')
 	except Exception as e:
 		print(e)
 
@@ -68,6 +68,8 @@ def create_iam_role(iam, config):
 
 def create_redshift_cluster(redshift, config, roleArn):
 	"""
+	Create a Redshfit cluster.
+
 	Arg(s):
 		redshift: a redshift resource/client
 		config: an object that contains necessary information for setting up the cluster
@@ -92,11 +94,11 @@ def create_redshift_cluster(redshift, config, roleArn):
 			Port=int(config['DEFAULT']['CLUSTER_PORT']),
 
 			# parameter for role (to allow s3 access)
-			IamRoles=[roleArn]
-			)
+			IamRoles=[roleArn])
 		# Wait for up to 30 minutes until the cluster is created successfully
-		redshift.get_waiter('cluster_available').wait(ClusterIdentifier=config['DEFAULT']['CLUSTER_IDENTIFIER'],
-													  WaiterConfig={'Delay': 30, 'MaxAttempts': 60})
+		redshift.get_waiter('cluster_available').wait(
+			ClusterIdentifier=config['DEFAULT']['CLUSTER_IDENTIFIER'],
+			WaiterConfig={'Delay': 30, 'MaxAttempts': 60})
 	except Exception as e:
 		print(e)
 
